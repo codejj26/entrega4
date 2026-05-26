@@ -1,15 +1,15 @@
-# 📊 Evento Evaluativo 4 – Analisis de Datos
+# Evento Evaluativo 4 – Analisis de Datos
 
 **Asignatura:** Analisis de Datos  
 **Docente:** Daniel Alexis Nieto Mora  
 **Grupo:** 190304018-1  
-**Periodo:** 2026-2  
-
+**Periodo:** 2026-1
+**Institución** ITM
 ## Integrantes
-Juan David Palacio
-Sebastian Cuencar
-Juan José Rúa
-Julián Ramírez
+-Juan David Palacio
+-Sebastian Cuencar
+-Juan José Rúa
+-Julián Ramírez
 
 ## Contenido
 - Ejercicio 3: clasificacion de reseñas (notebooks/ejercicio3_Amazon_Reviews.ipynb)
