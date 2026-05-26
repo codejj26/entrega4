@@ -4,12 +4,13 @@
 **Docente:** Daniel Alexis Nieto Mora  
 **Grupo:** 190304018-1  
 **Periodo:** 2026-1
-**Institución** ITM
+**Institución:** ITM
+
 ## Integrantes
--Juan David Palacio
--Sebastian Cuencar
--Juan José Rúa
--Julián Ramírez
+- Juan David Palacio
+- Sebastian Cuencar
+- Juan José Rúa
+- Julián Ramírez
 
 ## Contenido
 - Ejercicio 3: clasificacion de reseñas (notebooks/ejercicio3_Amazon_Reviews.ipynb)
