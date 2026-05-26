@@ -1,0 +1,831 @@
+<!doctype html>
+<html lang="es">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="slides-format" content="viewport" />
+        <title>Presentación ML - Clasificación y Clustering</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Source+Serif+4:wght@400;600&display=swap"
+            rel="stylesheet"
+        />
+        <style>
+            :root {
+                --bg-1: #0b1b28;
+                --bg-2: #0f2a3a;
+                --bg-3: #122f3c;
+                --card: rgba(255, 255, 255, 0.08);
+                --card-strong: rgba(255, 255, 255, 0.14);
+                --line: rgba(255, 255, 255, 0.16);
+                --text: #e9f1f7;
+                --muted: #b8c7d3;
+                --accent: #45d2c2;
+                --accent-2: #f2c14e;
+                --accent-3: #ef6f6c;
+                --shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+            }
+
+            * {
+                box-sizing: border-box;
+            }
+
+            html,
+            body {
+                margin: 0;
+                padding: 0;
+                height: 100%;
+                font-family: "Space Grotesk", "Segoe UI", sans-serif;
+                color: var(--text);
+                background: radial-gradient(circle at 15% 15%, rgba(69, 210, 194, 0.18), transparent 45%),
+                    radial-gradient(circle at 85% 20%, rgba(242, 193, 78, 0.12), transparent 40%),
+                    linear-gradient(160deg, var(--bg-1), var(--bg-2) 55%, var(--bg-3));
+                overflow: hidden;
+            }
+
+            #deck {
+                position: relative;
+                width: 100vw;
+                height: 100vh;
+            }
+
+            .slide {
+                position: absolute;
+                inset: 0;
+                padding: 64px 72px;
+                display: grid;
+                place-items: center;
+                opacity: 0;
+                transform: translateY(16px) scale(0.98);
+                transition: opacity 0.6s ease, transform 0.6s ease;
+                pointer-events: none;
+            }
+
+            .slide.active {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+                pointer-events: auto;
+            }
+
+            .slide-content {
+                width: min(1100px, 100%);
+                display: grid;
+                gap: 28px;
+            }
+
+            .eyebrow {
+                text-transform: uppercase;
+                letter-spacing: 0.18em;
+                font-size: 12px;
+                color: var(--accent);
+            }
+
+            h1,
+            h2,
+            h3 {
+                margin: 0;
+                font-family: "Source Serif 4", serif;
+                font-weight: 600;
+                line-height: 1.1;
+            }
+
+            h1 {
+                font-size: clamp(38px, 4vw, 64px);
+            }
+
+            h2 {
+                font-size: clamp(28px, 3vw, 44px);
+            }
+
+            h3 {
+                font-size: 20px;
+                color: var(--accent-2);
+            }
+
+            p {
+                margin: 0;
+                color: var(--muted);
+                font-size: 18px;
+                line-height: 1.5;
+            }
+
+            .grid-2 {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 22px;
+            }
+
+            .grid-3 {
+                display: grid;
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                gap: 20px;
+            }
+
+            .card {
+                background: var(--card);
+                border: 1px solid var(--line);
+                border-radius: 20px;
+                padding: 20px 22px;
+                box-shadow: var(--shadow);
+                backdrop-filter: blur(6px);
+            }
+
+            .card strong {
+                color: var(--text);
+            }
+
+            .metric {
+                display: grid;
+                gap: 4px;
+            }
+
+            .metric span {
+                color: var(--muted);
+                font-size: 13px;
+                text-transform: uppercase;
+                letter-spacing: 0.12em;
+            }
+
+            .metric b {
+                font-size: 28px;
+                color: var(--accent-2);
+            }
+
+            .placeholder {
+                border: 1px dashed rgba(255, 255, 255, 0.35);
+                border-radius: 18px;
+                padding: 26px;
+                text-align: center;
+                color: rgba(255, 255, 255, 0.7);
+                background: rgba(255, 255, 255, 0.04);
+                min-height: 180px;
+                display: grid;
+                place-items: center;
+                font-size: 16px;
+            }
+
+            .list {
+                display: grid;
+                gap: 10px;
+                font-size: 18px;
+                color: var(--muted);
+            }
+
+            .list b {
+                color: var(--text);
+            }
+
+            .table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 14px;
+            }
+
+            .table th,
+            .table td {
+                padding: 10px 12px;
+                text-align: left;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+            }
+
+            .table th {
+                color: var(--accent-2);
+                font-weight: 600;
+            }
+
+            .table td {
+                color: var(--muted);
+            }
+
+            .table tr:last-child td {
+                border-bottom: none;
+            }
+
+            .image-frame {
+                width: 100%;
+                height: 280px;
+                border-radius: 18px;
+                border: 1px solid rgba(255, 255, 255, 0.18);
+                background: rgba(255, 255, 255, 0.04);
+                box-shadow: var(--shadow);
+                padding: 12px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                overflow: hidden;
+            }
+
+            .image-frame.sm {
+                height: 220px;
+            }
+
+            .image-frame.md {
+                height: 280px;
+            }
+
+            .image-frame.lg {
+                height: 340px;
+            }
+
+            .slide-img {
+                max-width: 100%;
+                max-height: 100%;
+                width: auto;
+                height: auto;
+                object-fit: contain;
+                display: block;
+                border-radius: 12px;
+            }
+
+            .ui {
+                position: fixed;
+                left: 0;
+                right: 0;
+                bottom: 24px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 18px;
+                pointer-events: none;
+            }
+
+            .ui .controls {
+                display: flex;
+                gap: 10px;
+                pointer-events: auto;
+            }
+
+            .ui button {
+                background: rgba(15, 42, 58, 0.8);
+                color: var(--text);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+                border-radius: 999px;
+                padding: 10px 16px;
+                font-size: 14px;
+                cursor: pointer;
+                transition: transform 0.2s ease, background 0.2s ease;
+            }
+
+            .ui button:hover {
+                transform: translateY(-1px);
+                background: rgba(69, 210, 194, 0.18);
+            }
+
+            #progress {
+                width: 240px;
+                height: 6px;
+                border-radius: 999px;
+                background: rgba(255, 255, 255, 0.15);
+                overflow: hidden;
+            }
+
+            #progress span {
+                display: block;
+                height: 100%;
+                width: 0;
+                background: linear-gradient(90deg, var(--accent), var(--accent-2));
+                transition: width 0.4s ease;
+            }
+
+            #counter {
+                font-size: 13px;
+                color: var(--muted);
+                letter-spacing: 0.12em;
+            }
+
+            @media (max-width: 900px) {
+                .slide {
+                    padding: 42px 28px 90px;
+                }
+
+                .grid-2,
+                .grid-3 {
+                    grid-template-columns: 1fr;
+                }
+
+                .table {
+                    font-size: 12px;
+                }
+
+                .image-frame,
+                .image-frame.sm,
+                .image-frame.md,
+                .image-frame.lg {
+                    height: 220px;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div id="deck">
+            <section class="slide active">
+                <div class="slide-content">
+                    <span class="eyebrow">Proyecto de Machine Learning</span>
+                    <h1>Clasificación de reseñas y segmentación de clientes</h1>
+                    <p>Aprendizaje supervisado y no supervisado con Python</p>
+                    <div class="grid-2">
+                        <div class="card">
+                            <p><strong>Estudiante:</strong> [NOMBRE DEL ESTUDIANTE]</p>
+                            <p><strong>Curso:</strong> [CURSO / INSTITUCIÓN]</p>
+                        </div>
+                        <div class="card">
+                            <p><strong>Datasets:</strong> Amazon Reviews + Mall Customers</p>
+                            <p><strong>Enfoque:</strong> texto, clasificación, clustering</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="slide">
+                <div class="slide-content">
+                    <span class="eyebrow">Agenda</span>
+                    <h2>Ruta del video</h2>
+                    <div class="grid-2">
+                        <div class="card list">
+                            <div>1. Introducción y objetivos</div>
+                            <div>2. Ejercicio 3: Amazon Reviews</div>
+                            <div>3. Ejercicio 4: Mall Customers</div>
+                        </div>
+                        <div class="card list">
+                            <div>4. Comparación de enfoques</div>
+                            <div>5. Conclusiones y mejoras</div>
+                            <div>6. Cierre</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="slide">
+                <div class="slide-content">
+                    <span class="eyebrow">Introducción</span>
+                    <h2>Dos problemas, dos enfoques</h2>
+                    <div class="grid-3">
+                        <div class="card">
+                            <h3>Clasificación</h3>
+                            <p>Predecir una etiqueta conocida a partir de texto.</p>
+                        </div>
+                        <div class="card">
+                            <h3>Clustering</h3>
+                            <p>Descubrir grupos sin etiquetas previas.</p>
+                        </div>
+                        <div class="card">
+                            <h3>Valor</h3>
+                            <p>Transformar datos en decisiones y narrativas accionables.</p>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <p><strong>Idea clave:</strong> datos limpios + buenas métricas + visualización clara.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="slide">
+                <div class="slide-content">
+                    <span class="eyebrow">Ejercicio 3</span>
+                    <h2>Problema y dataset</h2>
+                    <div class="grid-2">
+                        <div class="card">
+                            <p><strong>Dataset:</strong> Amazon Reviews (texto + etiqueta).</p>
+                            <p><strong>Objetivo:</strong> clasificar reseñas en positivas o negativas.</p>
+                            <p><strong>Tipo:</strong> aprendizaje supervisado.</p>
+                        </div>
+                        <div class="card">
+                            <p><strong>Muestra usada:</strong> train=30000, test=15000.</p>
+                            <p><strong>Reto:</strong> texto ruidoso, vocabulario grande, contexto perdido.</p>
+                        </div>
+                    </div>
+                    <div class="image-frame md">
+                        <img class="slide-img" src="images/clases_distribucion.png" alt="Distribución de clases" />
+                    </div>
+                </div>
+            </section>
+
+            <section class="slide">
+                <div class="slide-content">
+                    <span class="eyebrow">Ejercicio 3</span>
+                    <h2>Preprocesamiento de texto</h2>
+                    <div class="grid-3">
+                        <div class="card list">
+                            <div><b>Limpieza:</b> minúsculas y caracteres no alfabéticos.</div>
+                            <div><b>Stopwords:</b> eliminación de palabras comunes.</div>
+                        </div>
+                        <div class="card list">
+                            <div><b>Tokenización:</b> regex sobre texto limpio.</div>
+                            <div><b>Stemming:</b> PorterStemmer.</div>
+                        </div>
+                        <div class="card list">
+                            <div><b>Vectorización:</b> TF-IDF con n-gramas (1,2).</div>
+                            <div><b>Máx. features:</b> 30k.</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="slide">
+                <div class="slide-content">
+                    <span class="eyebrow">Ejercicio 3</span>
+                    <h2>Modelos entrenados</h2>
+                    <div class="grid-3">
+                        <div class="card">
+                            <h3>Naive Bayes</h3>
+                            <p>Rápido, fuerte baseline para texto.</p>
+                        </div>
+                        <div class="card">
+                            <h3>Logistic Regression</h3>
+                            <p>Lineal, interpretable, buen equilibrio.</p>
+                        </div>
+                        <div class="card">
+                            <h3>Linear SVM</h3>
+                            <p>Maximiza margen, robusto en alta dimensión.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="slide">
+                <div class="slide-content">
+                    <span class="eyebrow">Ejercicio 3</span>
+                    <h2>Evaluación y resultados</h2>
+                    <div class="grid-3">
+                        <div class="card metric">
+                            <span>Mejor modelo</span>
+                            <b>Logistic Regression</b>
+                            <p>Accuracy 0.866 | F1 0.866</p>
+                        </div>
+                        <div class="card metric">
+                            <span>Linear SVM</span>
+                            <b>0.856</b>
+                            <p>Accuracy / F1</p>
+                        </div>
+                        <div class="card metric">
+                            <span>Naive Bayes</span>
+                            <b>0.818</b>
+                            <p>Accuracy / F1</p>
+                        </div>
+                    </div>
+                    <div class="grid-2">
+                        <div class="card">
+                            <h3>Matriz de confusión (mejor modelo)</h3>
+                            <div class="grid-2">
+                                <div class="card"><p>TN = 6422</p><p>FP = 1078</p></div>
+                                <div class="card"><p>FN = 927</p><p>TP = 6573</p></div>
+                            </div>
+                            <p>Tendencia: FP &gt; FN (sesgo a predecir positivo).</p>
+                        </div>
+                        <div class="image-frame lg">
+                            <img class="slide-img" src="images/matriz_confusion.png" alt="Matriz de confusión" />
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="slide">
+                <div class="slide-content">
+                    <span class="eyebrow">Ejercicio 3</span>
+                    <h2>Visualización t-SNE</h2>
+                    <div class="grid-2">
+                        <div class="card list">
+                            <div><b>Objetivo:</b> proyectar TF-IDF a 2D.</div>
+                            <div><b>Lectura:</b> reseñas positivas y negativas tienden a separarse.</div>
+                            <div><b>Limitación:</b> solo es una vista aproximada.</div>
+                        </div>
+                        <div class="image-frame lg">
+                            <img class="slide-img" src="images/tsne.png" alt="Visualización t-SNE" />
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="slide">
+                <div class="slide-content">
+                    <span class="eyebrow">Ejercicio 4</span>
+                    <h2>Problema y dataset</h2>
+                    <div class="grid-2">
+                        <div class="card">
+                            <p><strong>Dataset:</strong> Mall Customers (200 clientes).</p>
+                            <p><strong>Variables:</strong> Age, Annual Income (k$), Spending Score.</p>
+                            <p><strong>Objetivo:</strong> segmentar clientes por comportamiento.</p>
+                        </div>
+                        <div class="card">
+                            <p><strong>Tipo:</strong> aprendizaje no supervisado.</p>
+                            <p><strong>Uso final:</strong> perfiles para marketing y estrategia.</p>
+                        </div>
+                    </div>
+                    <div class="image-frame md">
+                        <img class="slide-img" src="images/eda_histogramas.png" alt="Distribuciones del dataset" />
+                    </div>
+                </div>
+            </section>
+
+            <section class="slide">
+                <div class="slide-content">
+                    <span class="eyebrow">Ejercicio 4</span>
+                    <h2>Análisis exploratorio</h2>
+                    <div class="grid-3">
+                        <div class="card list">
+                            <div>Distribuciones por edad e ingreso.</div>
+                            <div>Spending Score con alta dispersión.</div>
+                        </div>
+                        <div class="card list">
+                            <div>Relaciones ingreso vs. gasto.</div>
+                            <div>Patrones por género (opcional).</div>
+                        </div>
+                        <div class="card list">
+                            <div>Correlaciones bajas, ideal para clustering.</div>
+                            <div>Necesidad de estandarización.</div>
+                        </div>
+                    </div>
+                    <div class="image-frame md">
+                        <img class="slide-img" src="images/eda_scatter.png" alt="Gráficas de análisis exploratorio" />
+                    </div>
+                </div>
+            </section>
+
+            <section class="slide">
+                <div class="slide-content">
+                    <span class="eyebrow">Ejercicio 4</span>
+                    <h2>Modelos de clustering</h2>
+                    <div class="grid-3">
+                        <div class="card">
+                            <h3>K-Means</h3>
+                            <p>K óptimo = 6 (Silhouette 0.4274).</p>
+                        </div>
+                        <div class="card">
+                            <h3>DBSCAN</h3>
+                            <p>eps = 0.7035, clusters = 1, ruido = 14.</p>
+                        </div>
+                        <div class="card">
+                            <h3>Jerárquico</h3>
+                            <p>Ward con k = 6 (Silhouette 0.4201).</p>
+                        </div>
+                    </div>
+                    <div class="image-frame md">
+                        <img class="slide-img" src="images/dendrograma.png" alt="Dendrograma" />
+                    </div>
+                </div>
+            </section>
+
+            <section class="slide">
+                <div class="slide-content">
+                    <span class="eyebrow">Ejercicio 4</span>
+                    <h2>Evaluación y PCA</h2>
+                    <div class="grid-3">
+                        <div class="card metric">
+                            <span>K-Means</span>
+                            <b>0.4274</b>
+                            <p>Silhouette</p>
+                        </div>
+                        <div class="card metric">
+                            <span>Jerárquico</span>
+                            <b>0.4201</b>
+                            <p>Silhouette</p>
+                        </div>
+                        <div class="card metric">
+                            <span>PCA total</span>
+                            <b>77.57%</b>
+                            <p>Varianza explicada</p>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Modelo</th>
+                                    <th>Clusters</th>
+                                    <th>Silhouette</th>
+                                    <th>Davies-Bouldin</th>
+                                    <th>Calinski</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>K-Means</td>
+                                    <td>6</td>
+                                    <td>0.4274</td>
+                                    <td>0.8277</td>
+                                    <td>135.1</td>
+                                </tr>
+                                <tr>
+                                    <td>DBSCAN</td>
+                                    <td>1</td>
+                                    <td>0.0000</td>
+                                    <td>0.0000</td>
+                                    <td>0.0</td>
+                                </tr>
+                                <tr>
+                                    <td>Jerárquico</td>
+                                    <td>6</td>
+                                    <td>0.4201</td>
+                                    <td>0.8521</td>
+                                    <td>128.0</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <section class="slide">
+                <div class="slide-content">
+                    <span class="eyebrow">Ejercicio 4</span>
+                    <h2>Interpretación de segmentos</h2>
+                    <div class="card">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Cluster</th>
+                                    <th>Edad</th>
+                                    <th>Ingreso (k$)</th>
+                                    <th>Spending</th>
+                                    <th>Segmento</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>0</td>
+                                    <td>41.9</td>
+                                    <td>88.9</td>
+                                    <td>17.0</td>
+                                    <td>Alto Ingreso / Conservador</td>
+                                </tr>
+                                <tr>
+                                    <td>1</td>
+                                    <td>56.3</td>
+                                    <td>54.3</td>
+                                    <td>49.1</td>
+                                    <td>Ingreso y Gasto Moderados</td>
+                                </tr>
+                                <tr>
+                                    <td>2</td>
+                                    <td>25.2</td>
+                                    <td>25.8</td>
+                                    <td>76.9</td>
+                                    <td>Bajo Ingreso / Alto Gasto</td>
+                                </tr>
+                                <tr>
+                                    <td>3</td>
+                                    <td>32.7</td>
+                                    <td>86.5</td>
+                                    <td>82.1</td>
+                                    <td>Alto Ingreso / Premium</td>
+                                </tr>
+                                <tr>
+                                    <td>4</td>
+                                    <td>26.7</td>
+                                    <td>57.6</td>
+                                    <td>47.8</td>
+                                    <td>Ingreso y Gasto Moderados</td>
+                                </tr>
+                                <tr>
+                                    <td>5</td>
+                                    <td>45.5</td>
+                                    <td>26.3</td>
+                                    <td>19.4</td>
+                                    <td>Bajo Ingreso / Bajo Gasto</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <section class="slide">
+                <div class="slide-content">
+                    <span class="eyebrow">Comparación final</span>
+                    <h2>Supervisado vs. no supervisado</h2>
+                    <div class="card">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Aspecto</th>
+                                    <th>Ejercicio 3 (Clasificación)</th>
+                                    <th>Ejercicio 4 (Clustering)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Objetivo</td>
+                                    <td>Predecir sentimiento</td>
+                                    <td>Descubrir segmentos</td>
+                                </tr>
+                                <tr>
+                                    <td>Datos</td>
+                                    <td>Texto + etiqueta</td>
+                                    <td>Numéricos sin etiqueta</td>
+                                </tr>
+                                <tr>
+                                    <td>Métricas</td>
+                                    <td>Accuracy, F1, matriz</td>
+                                    <td>Silhouette, DB, PCA</td>
+                                </tr>
+                                <tr>
+                                    <td>Resultado clave</td>
+                                    <td>LR accuracy 0.866</td>
+                                    <td>K-Means k=6, Sil 0.427</td>
+                                </tr>
+                                <tr>
+                                    <td>Uso final</td>
+                                    <td>Clasificar opiniones</td>
+                                    <td>Definir perfiles de clientes</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <section class="slide">
+                <div class="slide-content">
+                    <span class="eyebrow">Conclusiones</span>
+                    <h2>Hallazgos principales</h2>
+                    <div class="grid-2">
+                        <div class="card list">
+                            <div><b>Ej3:</b> Logistic Regression lidera con F1 0.866.</div>
+                            <div><b>Sesgo:</b> mayor cantidad de FP que FN.</div>
+                            <div><b>Mejoras:</b> embeddings y ajuste de hiperparámetros.</div>
+                        </div>
+                        <div class="card list">
+                            <div><b>Ej4:</b> K-Means k=6 es el mejor balance.</div>
+                            <div><b>PCA:</b> 77.57% de varianza en 2 componentes.</div>
+                            <div><b>Uso:</b> segmentos claros para marketing.</div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <p><strong>Limitaciones:</strong> modelos lineales y sensibilidad a hiperparámetros.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="slide">
+                <div class="slide-content">
+                    <span class="eyebrow">Cierre</span>
+                    <h2>Gracias</h2>
+                </div>
+            </section>
+        </div>
+
+        <div class="ui">
+            <div id="progress"><span></span></div>
+            <div id="counter">01 / 16</div>
+            <div class="controls">
+                <button type="button" data-dir="prev">Prev</button>
+                <button type="button" data-dir="next">Next</button>
+            </div>
+        </div>
+
+        <script>
+            const slides = Array.from(document.querySelectorAll(".slide"));
+            const progressBar = document.querySelector("#progress span");
+            const counter = document.getElementById("counter");
+            let index = 0;
+
+            function updateSlides(nextIndex) {
+                index = Math.max(0, Math.min(slides.length - 1, nextIndex));
+                slides.forEach((slide, idx) => {
+                    slide.classList.toggle("active", idx === index);
+                });
+                const pct = ((index + 1) / slides.length) * 100;
+                progressBar.style.width = `${pct}%`;
+                counter.textContent = `${String(index + 1).padStart(2, "0")} / ${String(slides.length).padStart(2, "0")}`;
+            }
+
+            function next() {
+                updateSlides(index + 1);
+            }
+
+            function prev() {
+                updateSlides(index - 1);
+            }
+
+            document.querySelectorAll("[data-dir]").forEach((btn) => {
+                btn.addEventListener("click", () => {
+                    if (btn.dataset.dir === "next") {
+                        next();
+                    } else {
+                        prev();
+                    }
+                });
+            });
+
+            document.addEventListener("keydown", (event) => {
+                if (["ArrowRight", "ArrowDown", "PageDown", " "].includes(event.key)) {
+                    event.preventDefault();
+                    next();
+                }
+                if (["ArrowLeft", "ArrowUp", "PageUp"].includes(event.key)) {
+                    event.preventDefault();
+                    prev();
+                }
+                if (event.key === "Home") {
+                    updateSlides(0);
+                }
+                if (event.key === "End") {
+                    updateSlides(slides.length - 1);
+                }
+            });
+
+            updateSlides(0);
+        </script>
+    </body>
+</html>
